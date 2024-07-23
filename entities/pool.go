@@ -7,7 +7,6 @@ import (
 	"github.com/daoleno/uniswap-sdk-core/entities"
 	"github.com/daoleno/uniswapv3-sdk/constants"
 	"github.com/daoleno/uniswapv3-sdk/utils"
-	"github.com/ethereum/go-ethereum/common"
 )
 
 var (
@@ -32,7 +31,8 @@ type StepComputations struct {
 type Pool struct {
 	Token0           *entities.Token
 	Token1           *entities.Token
-	Fee              constants.FeeAmount
+	Fee              uint64
+	TickSpacing      int
 	SqrtRatioX96     *big.Int
 	Liquidity        *big.Int
 	TickCurrent      int
@@ -40,10 +40,6 @@ type Pool struct {
 
 	token0Price *entities.Price
 	token1Price *entities.Price
-}
-
-func GetAddress(tokenA, tokenB *entities.Token, fee constants.FeeAmount, initCodeHashManualOverride string) (common.Address, error) {
-	return utils.ComputePoolAddress(constants.FactoryAddress, tokenA, tokenB, fee, initCodeHashManualOverride)
 }
 
 /**
@@ -56,7 +52,7 @@ func GetAddress(tokenA, tokenB *entities.Token, fee constants.FeeAmount, initCod
  * @param tickCurrent The current tick of the pool
  * @param ticks The current state of the pool ticks or a data provider that can return tick data
  */
-func NewPool(tokenA, tokenB *entities.Token, fee constants.FeeAmount, sqrtRatioX96 *big.Int, liquidity *big.Int, tickCurrent int, ticks TickDataProvider) (*Pool, error) {
+func NewPool(tokenA, tokenB *entities.Token, fee uint64, sqrtRatioX96 *big.Int, liquidity *big.Int, tickCurrent int, ticks TickDataProvider) (*Pool, error) {
 	if fee >= constants.FeeMax {
 		return nil, ErrFeeTooHigh
 	}
@@ -102,44 +98,6 @@ func NewPool(tokenA, tokenB *entities.Token, fee constants.FeeAmount, sqrtRatioX
  */
 func (p *Pool) InvolvesToken(token *entities.Token) bool {
 	return p.Token0.Equal(token) || p.Token1.Equal(token)
-}
-
-// Token0Price returns the current mid price of the pool in terms of token0, i.e. the ratio of token1 over token0
-func (p *Pool) Token0Price() *entities.Price {
-	if p.token0Price != nil {
-		return p.token0Price
-	}
-	p.token0Price = entities.NewPrice(p.Token0, p.Token1, constants.Q192, new(big.Int).Mul(p.SqrtRatioX96, p.SqrtRatioX96))
-	return p.token0Price
-}
-
-// Token1Price returns the current mid price of the pool in terms of token1, i.e. the ratio of token0 over token1
-func (p *Pool) Token1Price() *entities.Price {
-	if p.token1Price != nil {
-		return p.token1Price
-	}
-	p.token1Price = entities.NewPrice(p.Token1, p.Token0, new(big.Int).Mul(p.SqrtRatioX96, p.SqrtRatioX96), constants.Q192)
-	return p.token1Price
-}
-
-/**
- * Return the price of the given token in terms of the other token in the pool.
- * @param token The token to return price of
- * @returns The price of the given token, in terms of the other.
- */
-func (p *Pool) PriceOf(token *entities.Token) (*entities.Price, error) {
-	if !p.InvolvesToken(token) {
-		return nil, ErrTokenNotInvolved
-	}
-	if p.Token0.Equal(token) {
-		return p.Token0Price(), nil
-	}
-	return p.Token1Price(), nil
-}
-
-// ChainId returns the chain ID of the tokens in the pool.
-func (p *Pool) ChainID() uint {
-	return p.Token0.ChainId()
 }
 
 /**
@@ -259,7 +217,7 @@ func (p *Pool) swap(zeroForOne bool, amountSpecified, sqrtPriceLimitX96 *big.Int
 		// because each iteration of the while loop rounds, we can't optimize this code (relative to the smart contract)
 		// by simply traversing to the next available tick, we instead need to exactly replicate
 		// tickBitmap.nextInitializedTickWithinOneWord
-		step.tickNext, step.initialized = p.TickDataProvider.NextInitializedTickWithinOneWord(state.tick, zeroForOne, p.tickSpacing())
+		step.tickNext, step.initialized = p.TickDataProvider.NextInitializedTickWithinOneWord(state.tick, zeroForOne, p.TickSpacing)
 
 		if step.tickNext < utils.MinTick {
 			step.tickNext = utils.MinTick
@@ -325,8 +283,4 @@ func (p *Pool) swap(zeroForOne bool, amountSpecified, sqrtPriceLimitX96 *big.Int
 		}
 	}
 	return state.amountCalculated, state.sqrtPriceX96, state.liquidity, state.tick, nil
-}
-
-func (p *Pool) tickSpacing() int {
-	return constants.TickSpacings[p.Fee]
 }
