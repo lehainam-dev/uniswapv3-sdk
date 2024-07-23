@@ -4,8 +4,7 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/daoleno/uniswap-sdk-core/entities"
-	"github.com/daoleno/uniswapv3-sdk/constants"
+	"github.com/lehainam-dev/uniswapv3-sdk/constants"
 )
 
 var (
@@ -14,15 +13,16 @@ var (
 	ErrInvariant             = errors.New("invariant violation")
 )
 var MaxUint160 = new(big.Int).Sub(new(big.Int).Exp(big.NewInt(2), big.NewInt(160), nil), constants.One)
+var MaxUint256, _ = new(big.Int).SetString("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16)
 
 func multiplyIn256(x, y *big.Int) *big.Int {
 	product := new(big.Int).Mul(x, y)
-	return new(big.Int).And(product, entities.MaxUint256)
+	return new(big.Int).And(product, MaxUint256)
 }
 
 func addIn256(x, y *big.Int) *big.Int {
 	sum := new(big.Int).Add(x, y)
-	return new(big.Int).And(sum, entities.MaxUint256)
+	return new(big.Int).And(sum, MaxUint256)
 }
 
 func GetAmount0Delta(sqrtRatioAX96, sqrtRatioBX96, liquidity *big.Int, roundUp bool) *big.Int {

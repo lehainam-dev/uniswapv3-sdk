@@ -4,8 +4,7 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/daoleno/uniswap-sdk-core/entities"
-	"github.com/daoleno/uniswapv3-sdk/constants"
+	"github.com/lehainam-dev/uniswapv3-sdk/constants"
 )
 
 var ErrInvalidInput = errors.New("invalid input")
@@ -14,7 +13,7 @@ func MostSignificantBit(x *big.Int) (int64, error) {
 	if x.Cmp(constants.Zero) <= 0 {
 		return 0, ErrInvalidInput
 	}
-	if x.Cmp(entities.MaxUint256) > 0 {
+	if x.Cmp(MaxUint256) > 0 {
 		return 0, ErrInvalidInput
 	}
 	var msb int64

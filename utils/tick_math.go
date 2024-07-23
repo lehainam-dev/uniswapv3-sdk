@@ -4,8 +4,7 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/daoleno/uniswap-sdk-core/entities"
-	"github.com/daoleno/uniswapv3-sdk/constants"
+	"github.com/lehainam-dev/uniswapv3-sdk/constants"
 )
 
 const (
@@ -129,7 +128,7 @@ func GetSqrtRatioAtTick(tick int) (*big.Int, error) {
 		ratio = mulShift(ratio, sqrtConst21)
 	}
 	if tick > 0 {
-		ratio = new(big.Int).Div(entities.MaxUint256, ratio)
+		ratio = new(big.Int).Div(MaxUint256, ratio)
 	}
 
 	// back to Q96
