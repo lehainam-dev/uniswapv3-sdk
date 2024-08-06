@@ -48,7 +48,7 @@ type Pool struct {
  * @param tickCurrent The current tick of the pool
  * @param ticks The current state of the pool ticks or a data provider that can return tick data
  */
-func NewPool(tokenA, tokenB *Token, fee uint64, sqrtRatioX96 *big.Int, liquidity *big.Int, tickCurrent int, ticks TickDataProvider) (*Pool, error) {
+func NewPool(tokenA, tokenB *Token, fee uint64, tickSpacing int, sqrtRatioX96 *big.Int, liquidity *big.Int, tickCurrent int, ticks TickDataProvider) (*Pool, error) {
 	if fee >= constants.FeeMax {
 		return nil, ErrFeeTooHigh
 	}
@@ -80,6 +80,7 @@ func NewPool(tokenA, tokenB *Token, fee uint64, sqrtRatioX96 *big.Int, liquidity
 		Token0:           token0,
 		Token1:           token1,
 		Fee:              fee,
+		TickSpacing:      tickSpacing,
 		SqrtRatioX96:     sqrtRatioX96,
 		Liquidity:        liquidity,
 		TickCurrent:      tickCurrent,
@@ -117,7 +118,7 @@ func (p *Pool) GetOutputAmount(inputAmount *CurrencyAmount, sqrtPriceLimitX96 *b
 	} else {
 		outputToken = p.Token0
 	}
-	pool, err := NewPool(p.Token0, p.Token1, p.Fee, sqrtRatioX96, liquidity, tickCurrent, p.TickDataProvider)
+	pool, err := NewPool(p.Token0, p.Token1, p.Fee, p.TickSpacing, sqrtRatioX96, liquidity, tickCurrent, p.TickDataProvider)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -145,7 +146,7 @@ func (p *Pool) GetInputAmount(outputAmount *CurrencyAmount, sqrtPriceLimitX96 *b
 	} else {
 		inputToken = p.Token1
 	}
-	pool, err := NewPool(p.Token0, p.Token1, p.Fee, sqrtRatioX96, liquidity, tickCurrent, p.TickDataProvider)
+	pool, err := NewPool(p.Token0, p.Token1, p.Fee, p.TickSpacing, sqrtRatioX96, liquidity, tickCurrent, p.TickDataProvider)
 	if err != nil {
 		return nil, nil, err
 	}
